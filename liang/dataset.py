@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from pytorch_lightning import LightningDataModule
+from torch.utils.data import RandomSampler
 
 
 def make_toy_dataset(
@@ -74,7 +75,7 @@ def data_to_torch(X, y):
 
 
 class LiangDataset(LightningDataModule):
-    def __init__(self, batch_size=-1):
+    def __init__(self, args):
         self.data_args = {
             "n": 3000,
             "d_noise": 100,
@@ -93,11 +94,12 @@ class LiangDataset(LightningDataModule):
         self.y_spu[self.y_spu == -1] = 0
         self.y_test[self.y_test == -1] = 0
 
-        if batch_size == -1:
+        if args.batch_size == -1:
             # full batch
-            batch_size = len(self.X_spu)
+            args.batch_size = len(self.X_spu)
 
-        self.batch_size = batch_size
+        self.args = args
+        self.batch_size = args.batch_size
         self.train_set = torch.utils.data.TensorDataset(
             torch.from_numpy(self.X_spu).float(),
             torch.from_numpy(self.y_spu).float(),
@@ -141,16 +143,19 @@ class LiangDataset(LightningDataModule):
             )
             stack = np.c_[xx.ravel(), yy.ravel()]
             x = np.hstack((stack, x_noise))
-            Z = model.predict(
-                torch.from_numpy(x).to(device).float()
-            ).detach().cpu().numpy()
+            Z = (
+                model.predict(torch.from_numpy(x).to(device).float())
+                .detach()
+                .cpu()
+                .numpy()
+            )
         else:
             assert False
 
         Z = Z.reshape(xx.shape)
-        
+
         # Plot the contour and training examples
-        plt.figure(figsize=(4, 4), dpi=80, facecolor='w', edgecolor='k')
+        plt.figure(figsize=(4, 4), dpi=80, facecolor="w", edgecolor="k")
         plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
         plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral)
         plt.savefig(output_file)

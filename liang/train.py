@@ -17,7 +17,7 @@ def train():
     pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
 
-    data = LiangDataset(batch_size=args.batch_size)
+    data = LiangDataset(args)
     model = model_chooser(args)
     output_dir = f"./outputs/{args.name}_{datetime.datetime.now()}"
     
