@@ -114,7 +114,7 @@ class LiangDataset(LightningDataModule):
         )
 
     def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.test_set, batch_size=32, shuffle=False)
+        return torch.utils.data.DataLoader(self.test_set, batch_size=len(self.test_set), shuffle=False)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
@@ -136,6 +136,7 @@ class LiangDataset(LightningDataModule):
         x_min, x_max = X[:, 0].min() - 0.5, X[:, 0].max() + 0.5
         y_min, y_max = X[:, 1].min() - 0.5, X[:, 1].max() + 0.5
         h = 0.01
+
         # Generate a grid of points with distance h between them
         xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
         # Predict the function value for the whole gid
@@ -165,4 +166,19 @@ class LiangDataset(LightningDataModule):
         plt.figure(figsize=(4, 4), dpi=80, facecolor="w", edgecolor="k")
         plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
         plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral)
+
+        train_accs = model.get_accs(
+            model.predict(torch.from_numpy(self.X_spu).float().to(device)).squeeze(),
+            torch.from_numpy(self.y_spu).float().to(device),
+            torch.from_numpy(self.g_spu).float().to(device)
+        )
+        val_accs = model.get_accs(
+            model.predict(torch.from_numpy(self.X_test).float().to(device)).squeeze(),
+            torch.from_numpy(self.y_test).float().to(device),
+            torch.from_numpy(self.g_test).float().to(device)
+        )
+
+        plt.title("tall: {:.2f}, vall: {:.2f}, \ntmaj: {:.2f}, tmin: {:.2f}, vmaj: {:.2f}, vmin: {:.2f}".format(
+            train_accs[0], val_accs[0], train_accs[2], train_accs[1], val_accs[2], val_accs[1]
+        ))
         plt.savefig(output_file)
