@@ -35,7 +35,8 @@ def make_toy_dataset(
 
         y_list.append(np.ones(n_group) * y_value)
         a_list.append(np.ones(n_group) * a_value)
-        g_list.append(np.ones(n_group) * group_idx)
+        # g_list.append(np.ones(n_group) * group_idx)
+        g_list.append(np.ones(n_group) if group_idx == 1 or group_idx == 2 else np.zeros(n_group))
         x_causal_list.append(
             np.random.normal(y_value * mean_causal, var_causal ** 0.5, n_group).reshape(
                 n_group, 1
@@ -91,6 +92,7 @@ class LiangDataset(LightningDataModule):
         train, test = generate_dataset(make_toy_dataset, self.data_args)[0]
         self.X_spu, self.y_spu, self.g_spu = train
         self.X_test, self.y_test, self.g_test = test
+
         self.y_spu[self.y_spu == -1] = 0
         self.y_test[self.y_test == -1] = 0
 
@@ -116,7 +118,12 @@ class LiangDataset(LightningDataModule):
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.train_set, batch_size=self.batch_size, shuffle=True
+            self.train_set, batch_size=self.batch_size,
+            sampler=RandomSampler(
+                self.train_set,
+                replacement=True,
+                num_samples=1000 * self.batch_size
+            )
         )
 
     def plot_model(self, model, output_file):

@@ -10,10 +10,12 @@ import datetime
 
 def train():
     parser = argparse.ArgumentParser()
+
     parser.add_argument("--batch_size", type=int, default=-1)
-    parser.add_argument("--lr", type=float, default=0.0005)
+    parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--method", type=str, default="base")
     parser.add_argument("--name", type=str, default=f"run")
+
     pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
 
